@@ -1,5 +1,9 @@
-// Variable to hold a copy of preprocessed data
+// Variable to hold a copy of preprocessed data globaly
 let processedData = {}
+
+// (not important) Select chart for exc 2
+var ctx = document.getElementById('complex_graph').getContext('2d');
+let complexGraph;
 
 //fetch data from local storage
 fetch('./data.json')
@@ -29,14 +33,104 @@ fetch('./data.json')
     //Plot the information to the second graph
     simpleGraphPlot(years, averageTempSimple, "simple_temp", "Average Temperatyre yearly")
 
+    // Plot the graph for EXC 2
+    updateComplexGraph()
   }
   )
 
+$("#update").click(() => { complexGraph.destroy(); updateComplexGraph()});
 
+
+const updateComplexGraph = () => {
+  //Get the values from the input fields
+  let rainCheck, snowCheck, cloudsCheck, startDate, endDate;
+  if ($('#rain').is(':checked')) { rainCheck = true } else { rainCheck = false }
+  if ($('#snow').is(':checked')) { snowCheck = true } else { snowCheck = false }
+  if ($('#clouds').is(':checked')) { cloudsCheck = true } else { cloudsCheck = false }
+  startDate = new Date($('#startDate').val()).setHours(00, 00, 00)
+  endDate = new Date($('#endDate').val()).setHours(23, 59, 59)
+
+  // Filter data on selected days
+  let dataOnTimeRange = processedData.filter((el, index) => {
+    let currentDay = new Date(el.date_time)
+    if (currentDay > startDate && currentDay < endDate) {
+      return el
+    }
+  })
+
+  /* Since this graph will have multiple variables
+  the data needs to be normalized, i decided to use linear 
+  normalization 
+  1. Get max and min of attributes*/
+
+  //  let maxTemp = getMinOrMax('max',"temp",dataOnTimeRange)
+  // let minTemp = getMinOrMax('min',"temp",dataOnTimeRange)
+  let maxTraffic = getMinOrMax('max', "traffic_volume", dataOnTimeRange)
+  let minTraffic = getMinOrMax('min', "traffic_volume", dataOnTimeRange)
+  let maxRain = getMinOrMax('max', "rain_1h", dataOnTimeRange)
+  let minRain = getMinOrMax('min', "rain_1h", dataOnTimeRange)
+  let maxSnow = getMinOrMax('max', "snow_1h", dataOnTimeRange)
+  let minSnow = getMinOrMax('min', "snow_1h", dataOnTimeRange)
+  let maxClouds = getMinOrMax('max', "clouds_all", dataOnTimeRange)
+  let minClouds = getMinOrMax('min', "clouds_all", dataOnTimeRange)
+
+  // Normalize the values using the formula (v-min)/(max-min)
+  let normalizedData = dataOnTimeRange.map(el=>{
+    el.traffic_volume = ((el.traffic_volume-minTraffic)/(maxTraffic-minTraffic)).toFixed(2)*1||0
+    el.rain_1h = ((el.rain_1h-minRain)/(maxRain-minRain)).toFixed(2)*1||0
+    el.snow_1h = ((el.snow_1h-minSnow)/(maxSnow-minSnow)).toFixed(2)*1||0
+    el.clouds_all = ((el.clouds_all-minClouds)/(maxClouds-minClouds)).toFixed(2)*1||0
+    return el
+  })
+
+  let graphLabel = normalizedData.map(el=>el.date_time)
+  let rainDataset ={
+    label:"Rain",
+    data: normalizedData.map(el=>el.rain_1h),
+    borderColor:"rgb(0, 153, 255)",
+  }
+
+  let snowDataset ={
+    label:"Snow",
+    data: normalizedData.map(el=>el.snow_1h),
+    borderColor:"rgb(204, 255, 255)",
+  }
+  let cloudsDataset ={
+    label:"Clouds",
+    data: normalizedData.map(el=>el.clouds_all),
+    borderColor:"rgb(153, 153, 255)",
+  }
+  let trafficDataset ={
+    label:"Temp",
+    data: normalizedData.map(el=>el.traffic_volume),
+    borderColor:"rgb(0, 0, 0)",
+    segment: {
+        borderColor: ()=>{1>2? "rgb(0, 153, 255)":"rgb(192, 193, 255)"},
+      }
+  }
+  let graphDatasets =[] 
+  graphDatasets.push(trafficDataset)
+  rainCheck? graphDatasets.push(rainDataset):null;
+  snowCheck? graphDatasets.push(snowDataset):null;
+  cloudsCheck? graphDatasets.push(cloudsDataset):null;
+
+  complexGraph = new Chart(ctx,{
+    type: 'line',
+    data:{
+      labels:graphLabel,
+    datasets:graphDatasets
+    },
+  })
+  complexGraph.update()
+
+}
+
+const getMinOrMax = (type, key, array) => {
+  return Math[type].apply(Math, array.map(function (o) { return o[key]; }))
+}
 // Function for generating graphs
 const simpleGraphPlot = (xAxis, yAxis, path, desc) => {
-
-  new Chart(document.getElementById(path), {
+  var chart = new Chart(document.getElementById(path), {
     type: 'line',
     data: {
       labels: xAxis,
@@ -44,11 +138,10 @@ const simpleGraphPlot = (xAxis, yAxis, path, desc) => {
         data: yAxis,
         label: desc,
         borderColor: "#" + ((1 << 24) * Math.random() | 0).toString(16),
-        fill: "#606c76"
+        fill: true,
       }]
     },
   });
-
 }
 const avgTempYear = (year) => {
   let meanSum = 0;
@@ -60,7 +153,7 @@ const avgTempYear = (year) => {
       meanLength++
     }
   })
-  return parseInt(meanSum / meanLength)
+  return (meanSum / meanLength).toFixed(2)
 
 }
 // Function that returns the average of traffic in a specific year
@@ -74,11 +167,12 @@ const avgTrafficYear = (year) => {
       meanLength++
     }
   })
-  return parseInt(meanSum / meanLength)
+  return (meanSum / meanLength).toFixed(2)
 }
 
 // Function to preprocess the data
 const preProcess = (data) => {
+
   /* The data has missing temp values
   In order to fix this I will use the
   attribute mean as an approuch */
@@ -92,12 +186,12 @@ const preProcess = (data) => {
       meanLength++;
     }
   })
-  let mean = parseInt(meanSum / meanLength)
+  let mean = (meanSum / meanLength).toFixed(3)
   console.log(`Temp mean is: ${mean}`)
 
 
   //Now replace the missing values with the mean
-  let newData = data.map(el => {
+  let fixedMean = data.map(el => {
     if (el.temp === 0) {
       el.temp = mean;
       return el
@@ -106,51 +200,19 @@ const preProcess = (data) => {
     }
   })
 
+  // Remove duplicated data  
+  let distinctData = [...new Map(fixedMean.map(item =>
+    [item["date_time"], item])).values()];
+
+  // Convert Kelvin temp to Celcius
+  let fixedTemp = distinctData.map(el => {
+    el.temp = parseFloat((el.temp - 273.15).toFixed(2))
+    return el
+  })
+
+
   /* Missing dates will be ignored since
   there are too many attributes to handle*/
-  processedData = newData
+  processedData = fixedTemp
 }
 
-
-
-/*
-new Chart(document.getElementById("line-chart"), {
-  type: 'line',
-  data: {
-    labels: [1500, 1600, 1700, 1750, 1800, 1850, 1900, 1950, 1999, 2050],
-    datasets: [{
-      data: [86, 114, 106, 106, 107, 111, 133, 221, 783, 2478],
-      label: "Africa",
-      borderColor: "#3e95cd",
-      fill: false
-    }, {
-      data: [282, 350, 411, 502, 635, 809, 947, 1402, 3700, 5267],
-      label: "Asia",
-      borderColor: "#8e5ea2",
-      fill: false
-    }, {
-      data: [168, 170, 178, 190, 203, 276, 408, 547, 675, 734],
-      label: "Europe",
-      borderColor: "#3cba9f",
-      fill: false
-    }, {
-      data: [40, 20, 10, 16, 24, 38, 74, 167, 508, 784],
-      label: "Latin America",
-      borderColor: "#e8c3b9",
-      fill: false
-    }, {
-      data: [6, 3, 2, 2, 7, 26, 82, 172, 312, 433],
-      label: "North America",
-      borderColor: "#c45850",
-      fill: false
-    }
-    ]
-  },
-  options: {
-    title: {
-      display: true,
-      text: 'World population per region (in millions)'
-    }
-  }
-});
-*/

@@ -4,10 +4,10 @@
 
 <head>
     <title>Practical Assignment</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
+    <link rel="stylesheet" href="./milligram.css">
 </head>
 
-<body style="background-color: black;">
+<body>
     <div class="container">
         <h1>Data Visualization Practical Assignment</h1>
         <p>Student:<u>Aredio Vani</u></p>
@@ -17,17 +17,45 @@
         </blockquote>
         <br>
         <h2>Exercise 1</h2>
-        <p>Average volume of traffic each year</p>
-        <canvas id="simple_traffic" width="2200" height="450"></canvas>
-        <br>
-        <p>Average temp each year</p>
-        <canvas id="simple_temp" width="2200" height="450"></canvas>
+        <div class="row">
+            <div class="column">
+                <p>Average volume of traffic each year</p>
+                <canvas id="simple_traffic" width="500" height="450"></canvas>
+            </div>
+            <div class="column">
+                <p>Average temp each year</p>
+                <canvas id="simple_temp" width="500" height="450"></canvas>
+            </div>
+        </div>
+        <h2>Exercise 2</h2>
+        <p>This graph has the ability to show multiple attributes alongside time selection</p>
+        <div class="row">
+            <div class="column">
+                <h3>Select the weather attributes</h3>
+                <input type="checkbox" id="rain" checked>
+                <label class="label-inline" for="rain">Rain</label>
+                <input type="checkbox" id="snow" checked>
+                <label class="label-inline" for="snow">Snow</label>
+                <input type="checkbox" id="clouds" checked>
+                <label class="label-inline" for="clouds">Clouds</label>
+            </div>
+            <div class="column">
+                <h3>Select the time range</h3>
+                <label for="startDate">Start date:</label>
+                <input type="date" id="startDate" value="2018-07-22" min="2018-01-01" max="2018-12-31">
+                <label for="endDate">End date:</label>
+                <input type="date" id="endDate" value="2018-07-25" min="2018-01-01" max="2018-12-31">
+            </div>
+        </div>
+        <div style="display: flex;justify-content: center;">
+            <a class="button" id="update">Update</a>
+        </div>
+        <canvas id="complex_graph" width="500" height="450"></canvas>
     </div>
 
 </body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.4.1/chart.min.js"
-    integrity="sha512-5vwN8yor2fFT9pgPS9p9R7AszYaNn0LkQElTXIsZFCL7ucT8zDCAqlQXDdaqgA1mZP47hdvztBMsIoFxq/FyyQ=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="./chart.min.js"></script>
+<script src="./jquery-3.6.0.min.js"></script>
 <script src="index.js"></script>
 
 </html>
