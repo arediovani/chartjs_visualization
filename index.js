@@ -38,7 +38,7 @@ fetch('./data.json')
   }
   )
 
-$("#update").click(() => { complexGraph.destroy(); updateComplexGraph()});
+$("#update").click(() => { complexGraph.destroy(); updateComplexGraph() });
 
 
 const updateComplexGraph = () => {
@@ -75,55 +75,106 @@ const updateComplexGraph = () => {
   let minClouds = getMinOrMax('min', "clouds_all", dataOnTimeRange)
 
   // Normalize the values using the formula (v-min)/(max-min)
-  let normalizedData = dataOnTimeRange.map(el=>{
-    el.traffic_volume = ((el.traffic_volume-minTraffic)/(maxTraffic-minTraffic)).toFixed(2)*1||0
-    el.rain_1h = ((el.rain_1h-minRain)/(maxRain-minRain)).toFixed(2)*1||0
-    el.snow_1h = ((el.snow_1h-minSnow)/(maxSnow-minSnow)).toFixed(2)*1||0
-    el.clouds_all = ((el.clouds_all-minClouds)/(maxClouds-minClouds)).toFixed(2)*1||0
+  let normalizedData = dataOnTimeRange.map(el => {
+    el.traffic_volume = ((el.traffic_volume - minTraffic) / (maxTraffic - minTraffic)).toFixed(2) * 1 || 0
+    el.rain_1h = ((el.rain_1h - minRain) / (maxRain - minRain)).toFixed(2) * 1 || 0
+    el.snow_1h = ((el.snow_1h - minSnow) / (maxSnow - minSnow)).toFixed(2) * 1 || 0
+    el.clouds_all = ((el.clouds_all - minClouds) / (maxClouds - minClouds)).toFixed(2) * 1 || 0
     return el
   })
 
-  let graphLabel = normalizedData.map(el=>el.date_time)
-  let rainDataset ={
-    label:"Rain",
-    data: normalizedData.map(el=>el.rain_1h),
-    borderColor:"rgb(0, 153, 255)",
+  let graphLabel = normalizedData.map(el => el.date_time)
+  let rainDataset = {
+    label: "Rain",
+    data: normalizedData.map(el => el.rain_1h),
+    borderColor: "rgb(0, 153, 255)",
+    pointRadius: 0,
   }
 
-  let snowDataset ={
-    label:"Snow",
-    data: normalizedData.map(el=>el.snow_1h),
-    borderColor:"rgb(204, 255, 255)",
+  let snowDataset = {
+    label: "Snow",
+    data: normalizedData.map(el => el.snow_1h),
+    borderColor: "rgb(204, 255, 255)",
+    pointRadius: 0,
   }
-  let cloudsDataset ={
-    label:"Clouds",
-    data: normalizedData.map(el=>el.clouds_all),
-    borderColor:"rgb(153, 153, 255)",
+  let cloudsDataset = {
+    label: "Clouds",
+    data: normalizedData.map(el => el.clouds_all),
+    borderColor: "rgb(153, 153, 255)",
+    pointRadius: 0,
   }
-  let trafficDataset ={
-    label:"Temp",
-    data: normalizedData.map(el=>el.traffic_volume),
-    borderColor:"rgb(0, 0, 0)",
+  let trafficDataset = {
+    label: "Traffic Volume",
+    data: normalizedData.map(el => el.traffic_volume),
+    borderColor: "rgb(0, 0, 0)",
+    pointRadius: 0,
     segment: {
-        borderColor: ()=>{1>2? "rgb(0, 153, 255)":"rgb(192, 193, 255)"},
-      }
+      borderColor: (ctx) => down(ctx, "#0000ff", "#4d00b2", "#660099", "#73008c","#990066","#b2004c", "#ff0000")
+    }
   }
-  let graphDatasets =[] 
-  graphDatasets.push(trafficDataset)
-  rainCheck? graphDatasets.push(rainDataset):null;
-  snowCheck? graphDatasets.push(snowDataset):null;
-  cloudsCheck? graphDatasets.push(cloudsDataset):null;
 
-  complexGraph = new Chart(ctx,{
+  let graphDatasets = []
+  graphDatasets.push(trafficDataset)
+  rainCheck ? graphDatasets.push(rainDataset) : null;
+  snowCheck ? graphDatasets.push(snowDataset) : null;
+  cloudsCheck ? graphDatasets.push(cloudsDataset) : null;
+
+  complexGraph = new Chart(ctx, {
     type: 'line',
-    data:{
-      labels:graphLabel,
-    datasets:graphDatasets
+    data: {
+      labels: graphLabel,
+      datasets: graphDatasets
     },
+    options: {
+      plugins: {
+        legend: {
+          display: false
+        },
+      }
+    }
   })
   complexGraph.update()
 
 }
+const down = (ctx, value1,value2,value3,value4,value5,valu6,value7) => {
+  if (ctx.p0.parsed.y > 0) {
+    temp = processedData[ctx.p0.$context.dataIndex].temp;
+    if (temp > -40 && temp < -30) {
+      return value1
+    } else if (temp > -30 && temp < -20) {
+      return value2
+    } else if (temp > -20 && temp < -10) {
+      return value3
+    } else if (temp > -10 && temp < 0) {
+      return value4
+    }else if (temp > 0 && temp < 20) {
+      return value5
+    }else if (temp > 20 && temp < 30) {
+      return valu6
+    }else if (temp > 30 && temp < 40) {
+      return value7
+    }
+  } else {
+    temp = processedData[ctx.p0.$context.dataIndex].temp;
+    if (temp > -40 && temp < -30) {
+      return value1
+    } else if (temp > -30 && temp < -20) {
+      return value2
+    } else if (temp > -20 && temp < -10) {
+      return value3
+    } else if (temp > -10 && temp < 0) {
+      return value4
+    }else if (temp > 10 && temp < 20) {
+      return value5
+    }else if (temp > 20 && temp < 30) {
+      return valu6
+    }else if (temp > 30 && temp < 40) {
+      return value7
+    }
+  }
+
+}
+
 
 const getMinOrMax = (type, key, array) => {
   return Math[type].apply(Math, array.map(function (o) { return o[key]; }))
@@ -210,9 +261,17 @@ const preProcess = (data) => {
     return el
   })
 
+  // Fix rain levels
+  let fixedRain = fixedTemp.map(el => {
+    if (el.rain_1h > 50) {
+      el.rain_1h = 50
+      return el
+    } else {
+      return el
+    }
+  })
 
   /* Missing dates will be ignored since
   there are too many attributes to handle*/
-  processedData = fixedTemp
+  processedData = fixedRain
 }
-
