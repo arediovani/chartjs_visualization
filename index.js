@@ -38,7 +38,14 @@ fetch('./data.json')
   }
   )
 
-$("#update").click(() => { complexGraph.destroy(); updateComplexGraph() });
+$("#update").click(() => {
+  complexGraph.destroy();
+  fetch('/data.json').then(response => response.json())
+    .then(response => {
+      preProcess(response)
+      updateComplexGraph()
+    })
+});
 
 
 const updateComplexGraph = () => {
@@ -109,7 +116,7 @@ const updateComplexGraph = () => {
     borderColor: "rgb(0, 0, 0)",
     pointRadius: 0,
     segment: {
-      borderColor: (ctx) => down(ctx, "#0000ff", "#4d00b2", "#660099", "#73008c","#990066","#b2004c", "#ff0000")
+      borderColor: (ctx) => down(ctx, "#0000ff", "#4d00b2", "#660099", "#73008c", "#990066", "#b2004c", "#ff0000")
     }
   }
 
@@ -136,7 +143,7 @@ const updateComplexGraph = () => {
   complexGraph.update()
 
 }
-const down = (ctx, value1,value2,value3,value4,value5,valu6,value7) => {
+const down = (ctx, value1, value2, value3, value4, value5, valu6, value7) => {
   if (ctx.p0.parsed.y > 0) {
     temp = processedData[ctx.p0.$context.dataIndex].temp;
     if (temp > -40 && temp < -30) {
@@ -147,11 +154,11 @@ const down = (ctx, value1,value2,value3,value4,value5,valu6,value7) => {
       return value3
     } else if (temp > -10 && temp < 0) {
       return value4
-    }else if (temp > 0 && temp < 20) {
+    } else if (temp > 0 && temp < 20) {
       return value5
-    }else if (temp > 20 && temp < 30) {
+    } else if (temp > 20 && temp < 30) {
       return valu6
-    }else if (temp > 30 && temp < 40) {
+    } else if (temp > 30 && temp < 40) {
       return value7
     }
   } else {
@@ -164,11 +171,11 @@ const down = (ctx, value1,value2,value3,value4,value5,valu6,value7) => {
       return value3
     } else if (temp > -10 && temp < 0) {
       return value4
-    }else if (temp > 10 && temp < 20) {
+    } else if (temp > 10 && temp < 20) {
       return value5
-    }else if (temp > 20 && temp < 30) {
+    } else if (temp > 20 && temp < 30) {
       return valu6
-    }else if (temp > 30 && temp < 40) {
+    } else if (temp > 30 && temp < 40) {
       return value7
     }
   }
@@ -197,7 +204,7 @@ const simpleGraphPlot = (xAxis, yAxis, path, desc) => {
 const avgTempYear = (year) => {
   let meanSum = 0;
   let meanLength = 0;
-  processedData.map(el => {
+  processedData.forEach(el => {
     let tempYear = new Date(el.date_time).getFullYear()
     if (tempYear == year) {
       meanSum += el.temp
@@ -211,7 +218,7 @@ const avgTempYear = (year) => {
 const avgTrafficYear = (year) => {
   let meanSum = 0;
   let meanLength = 0;
-  processedData.map(el => {
+  processedData.forEach(el => {
     let tempYear = new Date(el.date_time).getFullYear()
     if (tempYear == year) {
       meanSum += el.traffic_volume
